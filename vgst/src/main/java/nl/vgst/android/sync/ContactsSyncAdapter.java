@@ -170,6 +170,9 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 	
 	private void setBuilders(Api api, List<ContentProviderOperation> operationList, long id, JSONObject member, ContentProviderOperation.Builder raw, ContentProviderOperation.Builder name, ContentProviderOperation.Builder email, ContentProviderOperation.Builder telephone, ContentProviderOperation.Builder photo) throws IOException, JSONException {
+        raw.withValue(RawContacts.SYNC2, member.get("photoId"));
+        operationList.add(raw.build());
+
         if (photo!=null) {
     		if (id==0)
     			photo.withValueBackReference(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID, 0);
@@ -183,15 +186,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		
 				photo.withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, data);
 				operationList.add(photo.build());
-				
-				raw.withValue(RawContacts.SYNC2, member.get("photoId"));
 			} catch (IOException e) {
 				Log.e(TAG, "Can't download image", e);
 			}
         }
-        
-		operationList.add(raw.build());
-		
+
 		if (id==0)
 			name.withValueBackReference(ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID, 0);
 		else
