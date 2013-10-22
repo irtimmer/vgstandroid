@@ -1,0 +1,12 @@
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- <PreferenceCategory
+		android:title="General Settings" />
+    
+    <Preference android:title="Manager accounts" android:key="manage_account" />
+ 
+    <CheckBoxPreference android:key="instant_uploading" 
+		android:title="Sync"  
+		android:summary="Users synchroniseren"/>-->
+
+</PreferenceScreen>

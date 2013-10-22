@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="action_settings">Instellingen</string>
+    
+    <string name="username">Gebruikersnaam</string>
+	<string name="password">Wachtwoord</string>
+	
+	<string name="cancel">Annuleren</string>
+	
+	<string name="incorrect_credentials">Inloggegevens onjuist</string>
+	<string name="server_failed">Verbinding met server mislukt</string>
+	<string name="too_short">Te kort</string>
+	
+	<string name="checking">Inloggegevens worden gecontrolleerd</string>
+</resources>
