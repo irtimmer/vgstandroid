@@ -18,6 +18,8 @@ import android.content.Context;
 import android.content.OperationApplicationException;
 import android.content.SyncResult;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -31,6 +33,8 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	
 	private static final String TAG = "ContactsSyncAdapter";
 
+	private NetworkInfo activeInfo;
+
 	public ContactsSyncAdapter(Context context) {
 		super(context, true);
 	}
@@ -38,7 +42,9 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	@Override
 	public void onPerformSync(final Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
 	    Api api = new Api(account, getContext());
-	    
+		ConnectivityManager connMgr = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+		activeInfo = connMgr.getActiveNetworkInfo();
+
 		try {
 			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 
@@ -170,10 +176,9 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 	
 	private void setBuilders(Api api, List<ContentProviderOperation> operationList, long id, JSONObject member, ContentProviderOperation.Builder raw, ContentProviderOperation.Builder name, ContentProviderOperation.Builder email, ContentProviderOperation.Builder telephone, ContentProviderOperation.Builder photo) throws IOException, JSONException {
-        raw.withValue(RawContacts.SYNC2, member.get("photoId"));
-        operationList.add(raw.build());
-
-        if (photo!=null) {
+		boolean addPhoto = false;
+		Log.i(TAG, "Connect " + activeInfo.getType());
+        if (photo!=null && activeInfo != null && activeInfo.getType() == ConnectivityManager.TYPE_WIFI && activeInfo.isConnected()) {
     		if (id==0)
     			photo.withValueBackReference(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID, 0);
     		else
@@ -183,13 +188,20 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			
 			try {
 				byte[] data = api.download("users/profile/photo/type/big/id/"+member.getLong("id"));
-		
+
 				photo.withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, data);
-				operationList.add(photo.build());
+				raw.withValue(RawContacts.SYNC2, member.get("photoId"));
+				addPhoto = true;
 			} catch (IOException e) {
 				Log.e(TAG, "Can't download image", e);
 			}
         }
+
+		if (id==0 || addPhoto)
+			operationList.add(raw.build());
+
+		if (addPhoto)
+			operationList.add(photo.build());
 
 		if (id==0)
 			name.withValueBackReference(ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID, 0);
