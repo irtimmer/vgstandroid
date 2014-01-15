@@ -6,7 +6,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -17,6 +20,8 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 
+import nl.vgst.android.account.LoginActivity;
+
 public class GCMUtil {
 	
 	private final static String TAG = "GCMUtil";
@@ -26,16 +31,28 @@ public class GCMUtil {
 	private final static String PROPERTY_REG_ID = "registration_id";
 	private final static String PROPERTY_APP_VERSION = "app_version";
 	
-	public static boolean checkPlayServices(Activity activity) {
+	public static boolean checkPlayServices(final Activity activity, final PendingIntent pendingIntent) {
 	    int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(activity);
 	    if (resultCode != ConnectionResult.SUCCESS) {
 	        if (GooglePlayServicesUtil.isUserRecoverableError(resultCode)) {
-	            GooglePlayServicesUtil.getErrorDialog(resultCode, activity, 0).show();
+	            Dialog dialog = GooglePlayServicesUtil.getErrorDialog(resultCode, activity, 0);
+				dialog.show();
+				dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+					@Override
+					public void onDismiss(DialogInterface dialogInterface) {
+						try {
+							pendingIntent.send(LoginActivity.RESULT_CANCELED);
+						} catch (PendingIntent.CanceledException e) {
+							Log.e(TAG, "Intent canceled");
+						}
+					}
+				});
 		        return false;
 	        } else {
 	            Log.w(TAG, "This device is not supported.");
 	        }
 	    }
+		pendingIntent.cancel();
 	    return true;
 	}
 	

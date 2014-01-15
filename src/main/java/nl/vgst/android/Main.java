@@ -9,6 +9,7 @@ import org.json.JSONObject;
 
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -31,7 +32,7 @@ public class Main extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_splash);
 		
-		if (GCMUtil.checkPlayServices(this)) {
+		if (GCMUtil.checkPlayServices(this, createPendingResult(0, new Intent(), PendingIntent.FLAG_ONE_SHOT))) {
 			AccountManager accMgr = AccountManager.get(this);
 			nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
 		}
