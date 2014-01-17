@@ -43,7 +43,12 @@ public class Main extends Activity {
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		nextActivity(resultCode==LoginActivity.RESULT_OK);
+		if (resultCode==LoginActivity.RESULT_OK)
+			nextActivity(true);
+		else {
+			AccountManager accMgr = AccountManager.get(this);
+			nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
+		};
 	}
 	
 	private void nextActivity(boolean authenticated) {
