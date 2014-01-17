@@ -106,6 +106,7 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 						accMgr.addAccountExplicitly(account, password, null);
 
 						ContentResolver.setIsSyncable(account, "com.android.contacts", 1);
+						ContentResolver.setIsSyncable(account, "com.android.calendar", 1);
 
 						Bundle params = new Bundle();
 						params.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
@@ -114,6 +115,7 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 						setSync(account, params);
 						
 						ContentResolver.setSyncAutomatically(account, "com.android.contacts", true);
+						ContentResolver.setSyncAutomatically(account, "com.android.calendar", true);
 					} else
 						accMgr.setPassword(account, password);
 					
@@ -136,6 +138,7 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
 				params.putBoolean(ContentResolver.SYNC_EXTRAS_DO_NOT_RETRY, false);
 				ContentResolver.addPeriodicSync(account, "com.android.contacts", params, 60 * 60 * 24);
+				ContentResolver.addPeriodicSync(account, "com.android.calendar", params, 60 * 60 * 24);
 			}
 		}
 		
