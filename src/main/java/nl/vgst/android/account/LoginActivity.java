@@ -106,8 +106,7 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 						accMgr.addAccountExplicitly(account, password, null);
 
 						ContentResolver.setIsSyncable(account, "com.android.contacts", 1);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-							ContentResolver.setIsSyncable(account, "com.android.calendar", 1);
+						ContentResolver.setIsSyncable(account, "com.android.calendar", Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH ? 1 : 0);
 
 						Bundle params = new Bundle();
 						params.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
