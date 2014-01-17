@@ -7,12 +7,15 @@ import nl.vgst.android.account.LoginActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -60,6 +63,13 @@ public class Main extends Activity {
 
 		@Override
 		protected String doInBackground(Void... args) {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+				AccountManager accounts = AccountManager.get(Main.this);
+				Account account = accounts.getAccountsByType(Vgst.ACCOUNT_TYPE)[0];
+				ContentResolver.setIsSyncable(account, "com.android.calendar", 1);
+				ContentResolver.setSyncAutomatically(account, "com.android.calendar", true);
+			}
+
 			Api api = new Api(Main.this);
 			try {
 				JSONObject data = api.get("api/createToken").getJSONObject("data");
