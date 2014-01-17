@@ -18,7 +18,7 @@ import android.content.Context;
 
 public class Api {
 	
-	public final static String HOST = "http://192.168.68.2/vgst6/domains/dev/";
+	public final static String HOST = "https://vgst.nl/";
 	
 	public Api(Context context) {
 		AccountManager accounts = AccountManager.get(context);
