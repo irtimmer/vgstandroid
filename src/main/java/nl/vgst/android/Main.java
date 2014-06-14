@@ -66,6 +66,8 @@ public class Main extends Activity {
 	
 	private class LoginTask extends AsyncTask<Void, Void, String> {
 
+		private final static String LOGIN = "LOGIN";
+
 		@Override
 		protected String doInBackground(Void... args) {
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
@@ -82,6 +84,8 @@ public class Main extends Activity {
 				String token = data.getString("token");
 				
 				return Api.HOST + "login/token/id/" + userId + "/token/" + token;
+			} catch (AuthenticationException e) {
+				return LOGIN;
 			} catch (JSONException e) {
 				Log.e(TAG, "Kan data niet lezen", e);
 			} catch (IOException e) {
@@ -93,14 +97,15 @@ public class Main extends Activity {
 		
 		@Override
 		protected void onPostExecute(String result) {
-			if (result!=null) {
+			if (result==LOGIN) {
+				Intent intent = new Intent(Main.this, LoginActivity.class);
+				startActivityForResult(intent, 0);
+			} else if (result!=null) {
 				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(result));
 				startActivity(intent);
 				finish();
-			} else {
-				Intent intent = new Intent(Main.this, LoginActivity.class);
-				startActivityForResult(intent, 0);
-			}
+			} else
+				finish();
 		}
 		
 		@Override

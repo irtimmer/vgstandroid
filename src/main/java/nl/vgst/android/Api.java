@@ -62,8 +62,10 @@ public class Api {
 		try {
 			//FIX: Gzip enconding levert problemen in combinatie met Android en HTTPS
 			urlConnection.setRequestProperty("Accept-Encoding", "identity");
+			if (urlConnection.getResponseCode()==401)
+				throw new AuthenticationException();
+
 			InputStream in = urlConnection.getInputStream();
-			System.out.println(in);
 			ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 			byte[] b = new byte[1024];
 			int length = 0;
