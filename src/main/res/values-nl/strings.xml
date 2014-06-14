@@ -13,4 +13,5 @@
 	<string name="too_short">Te kort</string>
 	
 	<string name="checking">Inloggegevens worden gecontrolleerd</string>
+    <string name="warning_title">Waarschuwing</string>
 </resources>

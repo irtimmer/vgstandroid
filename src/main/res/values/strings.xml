@@ -19,4 +19,5 @@
     <string name="action_notifications">Notifications</string>
 
     <string name="settings_title">Settings</string>
+    <string name="warning_title">Warning</string>
 </resources>

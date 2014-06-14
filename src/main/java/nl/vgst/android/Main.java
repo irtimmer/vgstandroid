@@ -10,14 +10,17 @@ import org.json.JSONObject;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
@@ -27,6 +30,8 @@ import com.google.android.gms.common.GooglePlayServicesUtil;
  * @author Iwan Timmer
  */
 public class Main extends Activity {
+
+	private static final int REQUEST_GCM = 0, REQUEST_LOGIN = 1;
 	
 	private static final String TAG = "MAIN";
 	
@@ -35,7 +40,7 @@ public class Main extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_splash);
 		
-		if (GCMUtil.checkPlayServices(this, createPendingResult(0, new Intent(), PendingIntent.FLAG_ONE_SHOT))) {
+		if (GCMUtil.checkPlayServices(this, createPendingResult(REQUEST_GCM, new Intent(), PendingIntent.FLAG_ONE_SHOT))) {
 			AccountManager accMgr = AccountManager.get(this);
 			nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
 		}
@@ -43,11 +48,12 @@ public class Main extends Activity {
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (resultCode==LoginActivity.RESULT_OK)
-			nextActivity(true);
-		else if (resultCode==RESULT_CANCELED)
-			finish();
-		else {
+		if (requestCode == REQUEST_LOGIN) {
+			if (resultCode==LoginActivity.RESULT_OK)
+				nextActivity(true);
+			else if (resultCode==RESULT_CANCELED)
+				finish();
+		} else {
 			AccountManager accMgr = AccountManager.get(this);
 			nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
 		};
@@ -62,7 +68,7 @@ public class Main extends Activity {
 			new LoginTask().execute();
 		} else {
 			Intent intent = new Intent(this, LoginActivity.class);
-			startActivityForResult(intent, 0);
+			startActivityForResult(intent, REQUEST_LOGIN);
 		}		
 	}
 	
@@ -106,8 +112,17 @@ public class Main extends Activity {
 				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(result));
 				startActivity(intent);
 				finish();
-			} else
-				finish();
+			} else {
+				AlertDialog dialog = new AlertDialog.Builder(Main.this).create();
+				dialog.setTitle(R.string.warning_title);
+				dialog.setMessage(getString(R.string.server_failed));
+				dialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						finish();
+					}
+				});
+				dialog.show();
+			}
 		}
 		
 		@Override
