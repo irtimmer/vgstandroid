@@ -55,7 +55,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				values.put(Calendars.CALENDAR_ACCESS_LEVEL, Calendars.CAL_ACCESS_READ);
 				values.put(Calendars.SYNC_EVENTS, true);
 				Uri uri = provider.insert(asSyncAdapter(Calendars.CONTENT_URI, account.name, account.type), values);
-				gcursor = provider.query(Calendars.CONTENT_URI, new String[] {Calendars._ID}, null, null, null);
+				gcursor = provider.query(Calendars.CONTENT_URI, new String[] {Calendars._ID}, Calendars.ACCOUNT_TYPE + "=?", new String[] {account.type}, null);
 				gcursor.moveToNext();
 			}
 			long calendarId = gcursor.getLong(0);
