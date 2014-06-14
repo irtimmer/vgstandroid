@@ -84,7 +84,6 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 						} else if (id<id2) {
 							Log.d(TAG, "Create event " + id);
 							addEvent(api, calendarId, account, provider, event);
-							c1.moveToPrevious();
 							processed = true;
 							syncResult.stats.numInserts++;
 						} else {
