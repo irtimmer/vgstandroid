@@ -3,6 +3,7 @@ package nl.vgst.android.account;
 import java.io.IOException;
 
 import nl.vgst.android.Api;
+import nl.vgst.android.AuthenticationException;
 import nl.vgst.android.R;
 import nl.vgst.android.Vgst;
 
@@ -42,6 +43,7 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 	}
 
 	public void onCancelClick(View v) {
+		setResult(RESULT_CANCELED);
 		this.finish();
 	}
 

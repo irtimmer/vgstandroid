@@ -45,6 +45,8 @@ public class Main extends Activity {
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (resultCode==LoginActivity.RESULT_OK)
 			nextActivity(true);
+		else if (resultCode==RESULT_CANCELED)
+			finish();
 		else {
 			AccountManager accMgr = AccountManager.get(this);
 			nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
