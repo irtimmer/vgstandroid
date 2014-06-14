@@ -77,10 +77,12 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 						long id2 = Long.parseLong(c1.getString(1));
 
 						if (id==id2) {
+							Log.d(TAG, "Update event " + id);
 							updateEvent(api, calendarId, account, provider, c1.getLong(0), event);
 							processed = true;
 							syncResult.stats.numUpdates++;
 						} else if (id<id2) {
+							Log.d(TAG, "Create event " + id);
 							addEvent(api, calendarId, account, provider, event);
 							c1.moveToPrevious();
 							processed = true;
