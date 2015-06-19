@@ -1,60 +1,70 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent" >
 
-        <LinearLayout
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="15dip"
+        android:layout_centerInParent="true"
+        android:layout_gravity="center">
+
+        <ImageView
+            android:id="@+id/logo"
+            android:src="@drawable/ic_logo"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_marginBottom="40dp"
+            android:antialias="true"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/username" >
+        </TextView>
+
+        <EditText
+            android:id="@+id/username"
             android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:orientation="vertical"
-            android:padding="15dip" >
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress" >
+        </EditText>
 
-            <TextView
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/password" >
+        </TextView>
+
+        <EditText
+            android:id="@+id/password"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword" >
+        </EditText>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="bottom" >
+
+            <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/username" >
-            </TextView>
+                android:layout_alignParentLeft="true"
+                android:onClick="onCancelClick"
+                android:text="@android:string/cancel" >
+            </Button>
 
-            <EditText
-                android:id="@+id/username"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textEmailAddress" >
-            </EditText>
-
-            <TextView
+            <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/password" >
-            </TextView>
-
-            <EditText
-                android:id="@+id/password"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPassword" >
-            </EditText>
-
-            <RelativeLayout
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:gravity="bottom" >
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:onClick="onCancelClick"
-                    android:text="@android:string/cancel" >
-                </Button>
-
-                <Button
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentRight="true"
-                    android:onClick="onSaveClick"
-                    android:text="@android:string/ok" >
-                </Button>
-            </RelativeLayout>
+                android:layout_alignParentRight="true"
+                android:onClick="onSaveClick"
+                android:text="@android:string/ok" >
+            </Button>
         </LinearLayout>
+    </LinearLayout>
 
-</RelativeLayout>
+</FrameLayout>

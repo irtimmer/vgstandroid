@@ -35,6 +35,7 @@ import android.annotation.TargetApi;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -88,6 +89,11 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 		
 		ProgressDialog dialog = ProgressDialog.show(this, "Login", getResources().getText(R.string.checking));
 		new LoginTask(tvUsername, tvPassword, dialog).execute();
+	}
+
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		findViewById(R.id.logo).setVisibility(newConfig.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO?View.VISIBLE:View.INVISIBLE);
 	}
 	
 	private class LoginTask extends AsyncTask<Void, Void, Boolean> {
