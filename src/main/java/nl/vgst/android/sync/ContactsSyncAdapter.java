@@ -31,6 +31,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
@@ -69,7 +71,6 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
         if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(getContext())== ConnectionResult.SUCCESS)
             GCMUtil.getRegistrationId(getContext());
 
-	    Api api = new Api(account, getContext());
 		ConnectivityManager connMgr = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 		activeInfo = connMgr.getActiveNetworkInfo();
 
@@ -79,6 +80,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		Log.e(TAG, Boolean.toString(keep));
 
 		try {
+			Api api = new Api(account, getContext());
 			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 
 			Cursor gcursor = provider.query(Settings.CONTENT_URI, new String[] {}, Settings.ACCOUNT_TYPE + "=?", new String[] {account.type}, null);
@@ -163,6 +165,12 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		} catch (JSONException e) {
 			Log.e(TAG, "Probleem met data", e);
 			syncResult.stats.numParseExceptions++;
+		} catch (AuthenticatorException e) {
+			Log.e(TAG, "Probleem met authenticatie", e);
+			syncResult.databaseError = true;
+		} catch (OperationCanceledException e) {
+			Log.e(TAG, "Probleem met authenticatie", e);
+			syncResult.databaseError = true;
 		}
 	}
 	

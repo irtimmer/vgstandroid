@@ -102,10 +102,10 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
 			Account account, String authTokenType, Bundle options)
 			throws NetworkErrorException {
 		AccountManager am = AccountManager.get(context);
-		String token = null; //am.peekAuthToken(account, authTokenType);
+		String token = am.peekAuthToken(account, authTokenType);
 
 		if (TextUtils.isEmpty(token)) {
-			Api api = new Api(account, context);
+			Api api = new Api(account.name, am.getPassword(account));
 			try {
 				JSONObject data = api.get("api/createToken");
 				token = data.getJSONObject("data").getString("token");

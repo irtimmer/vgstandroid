@@ -84,7 +84,6 @@ public class Main extends Activity {
 			Account account = accounts.getAccountsByType(Vgst.ACCOUNT_TYPE)[0];
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
 				ContentResolver.setIsSyncable(account, "com.android.calendar", 1);
-				ContentResolver.setSyncAutomatically(account, "com.android.calendar", true);
 			}
 			accounts.getAuthToken(account, Vgst.AUTHTOKEN_TYPE_FULL_ACCESS, (Bundle) null, this, new AccountManagerCallback<Bundle>() {
 				@Override
@@ -100,7 +99,7 @@ public class Main extends Activity {
 					if (result.getInt(AccountManager.KEY_ERROR_CODE, 0) == 0) {
 						String token = result.getString(AccountManager.KEY_AUTHTOKEN);
 						String username = result.getString(AccountManager.KEY_ACCOUNT_NAME);
-						String url = Api.HOST + "login/token/username/" + username + "/token/" + token;
+						String url = Api.HOST + "login/token?token=" + token;
 						Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
 						startActivity(intent);
 						finish();

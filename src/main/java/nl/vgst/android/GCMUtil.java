@@ -20,10 +20,13 @@
 package nl.vgst.android;
 
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.PendingIntent;
@@ -147,8 +150,14 @@ public class GCMUtil {
 				Log.e(TAG, "Error contacting server during GCM registration", e);
 			} catch (JSONException e) {
 				Log.e(TAG, "Can't read response from server for registration", e);
-			}	
-				
+			} catch (CancellationException e) {
+				Log.e(TAG, "Can't authenticate to server", e);
+			} catch (AuthenticatorException e) {
+				Log.e(TAG, "Can't authenticate to server", e);
+			} catch (OperationCanceledException e) {
+				Log.e(TAG, "Can't authenticate to server", e);
+			}
+
 			return null;
 		}
 	}

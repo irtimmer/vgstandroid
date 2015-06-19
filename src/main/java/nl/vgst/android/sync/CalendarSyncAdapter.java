@@ -20,6 +20,8 @@
 package nl.vgst.android.sync;
 
 import android.accounts.Account;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.annotation.TargetApi;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
@@ -58,9 +60,8 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 
 	@Override
 	public void onPerformSync(final Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
-		Api api = new Api(account, getContext());
-
 		try {
+			Api api = new Api(account, getContext());
 			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 
 			Cursor gcursor = provider.query(Calendars.CONTENT_URI, new String[] {Calendars._ID}, Calendars.ACCOUNT_TYPE + "=?", new String[] {account.type}, null);
@@ -139,6 +140,12 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		} catch (JSONException e) {
 			Log.e(TAG, "Probleem met data", e);
 			syncResult.stats.numParseExceptions++;
+		} catch (AuthenticatorException e) {
+			Log.e(TAG, "Probleem met authenticatie", e);
+			syncResult.databaseError = true;
+		} catch (OperationCanceledException e) {
+			Log.e(TAG, "Probleem met authenticatie", e);
+			syncResult.databaseError = true;
 		}
 	}
 
@@ -146,7 +153,6 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 		ContentProviderOperation.Builder raw = ContentProviderOperation.newUpdate(asSyncAdapter(Events.CONTENT_URI, account.name, account.type));
 		raw.withSelection(Events._SYNC_ID + "=? AND " + Events.CALENDAR_ID + "=?", new String[]{String.format("%09d", id), String.format("%09d", calendarId)});
-		raw.withValue(Events.CALENDAR_ID, calendarId);
 		raw.withValue(Events.DTSTART, String.format("%09d", event.getLong("start")*1000));
 		raw.withValue(Events.DTEND, String.format("%09d", event.getLong("end")*1000));
 		raw.withValue(Events.TITLE, event.getString("title"));

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013, 2014 Iwan Timmer
+ * Copyright (C) 2013-2015 Iwan Timmer
  *
  * This file is part of VGSTAndroid.
  *
@@ -33,37 +33,43 @@ import org.json.JSONTokener;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.Context;
 
 public class Api {
 	
 	public final static String HOST = "https://vgst.nl/";
-	
-	public Api(Context context) {
+
+	private AccountManager accounts;
+	private String token;
+
+	public Api(Context context) throws AuthenticatorException, OperationCanceledException, IOException {
 		AccountManager accounts = AccountManager.get(context);
 		init(accounts.getAccountsByType(Vgst.ACCOUNT_TYPE)[0], accounts);
 	}
 
-	public Api(final Account account, Context context) {
+	public Api(final Account account, Context context) throws AuthenticatorException, OperationCanceledException, IOException {
 		init(account, AccountManager.get(context));
 	}
 	
-	public Api(String username, String password) {
-		init(username, password);
-	}
-	
-	private void init(final String username, final String password) {
+	public Api(final String username, final String password) {
 		Authenticator.setDefault(new Authenticator() {
 			protected PasswordAuthentication getPasswordAuthentication() {
 				return new PasswordAuthentication(username, password.toCharArray());
-			};
+			}
+
+			;
 		});
 	}
 	
-	private void init(Account account, AccountManager accounts) {
-		init(account.name, accounts.getPassword(account));
+	private void init(Account account, AccountManager accounts) throws AuthenticatorException, OperationCanceledException, IOException {
+		this.accounts = accounts;
+		token = accounts.blockingGetAuthToken(account, Vgst.AUTHTOKEN_TYPE_FULL_ACCESS, true);
+		if (token == null)
+			token = "";
 	}
-	
+
 	public JSONObject get(String url) throws IOException, JSONException {
 		byte[] data = download(url);
 		String json = new String(data, "UTF-8");
@@ -77,10 +83,21 @@ public class Api {
 	}
 	
 	public byte[] download(String url) throws IOException {
+		if (accounts != null) {
+			url += "?token="+token;
+		}
+
 		HttpURLConnection urlConnection = (HttpURLConnection) new URL(HOST+url).openConnection();
 		try {
 			//FIX: Gzip enconding levert problemen in combinatie met Android en HTTPS
 			urlConnection.setRequestProperty("Accept-Encoding", "identity");
+			if (urlConnection.getResponseCode()==403) {
+				if (accounts != null)
+					accounts.invalidateAuthToken(Vgst.ACCOUNT_TYPE, token);
+
+				throw new AuthenticationException();
+			}
+
 			if (urlConnection.getResponseCode()==401)
 				throw new AuthenticationException();
 
