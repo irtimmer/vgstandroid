@@ -12,6 +12,12 @@
         -->
     </style>
 
+    <style name="AppBaseConfigTheme" parent="android:Theme.Light">
+    </style>
+
+    <style name="AppConfigTheme" parent="AppBaseConfigTheme">
+    </style>
+
     <!-- Application theme. -->
     <style name="AppTheme" parent="AppBaseTheme">
         <!-- All customizations that are NOT specific to a particular API-level can go here. -->

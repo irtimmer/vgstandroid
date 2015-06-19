@@ -14,4 +14,9 @@
 	
 	<string name="checking">Inloggegevens worden gecontrolleerd</string>
     <string name="warning_title">Waarschuwing</string>
+
+	<string name="prefs_vgst">VGST instellingen</string>
+
+	<string name="keep_users">Behoud oud-leden</string>
+	<string name="keep_users_summary">Behoud oud-leden contacten</string>
 </resources>

@@ -8,4 +8,11 @@
         <!-- API 11 theme customizations can go here. -->
     </style>
 
+    <style name="AppBaseConfigTheme" parent="android:Theme.Holo.Light">
+    </style>
+
+    <style name="AppConfigTheme" parent="AppBaseConfigTheme">
+        <item name="android:displayOptions">showHome|homeAsUp|showTitle</item>
+    </style>
+
 </resources>

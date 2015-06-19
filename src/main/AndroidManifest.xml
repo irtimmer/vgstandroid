@@ -45,6 +45,15 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" >
         </activity>
+        <activity
+            android:name="nl.vgst.android.account.SettingsActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppConfigTheme">
+            <intent-filter>
+                <action android:name="nl.vgst.android.PREFS"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".account.AccountAuthenticatorService"

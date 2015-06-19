@@ -36,6 +36,7 @@ import android.content.ContentProviderClient;
 import android.content.ContentProviderOperation;
 import android.content.Context;
 import android.content.OperationApplicationException;
+import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -43,6 +44,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.Settings;
@@ -70,6 +72,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	    Api api = new Api(account, getContext());
 		ConnectivityManager connMgr = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 		activeInfo = connMgr.getActiveNetworkInfo();
+
+		SharedPreferences prefs = getContext().getSharedPreferences("nl.vgst.android_preferences", Context.MODE_PRIVATE);
+		Log.e(TAG, prefs.getAll().toString());
+		boolean keep = prefs.getBoolean("keep_users", false);
+		Log.e(TAG, Boolean.toString(keep));
 
 		try {
 			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
@@ -112,7 +119,14 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	    					c1.moveToPrevious();
 	    					processed = true;
 	    				} else {
-	    					ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
+							ContentProviderOperation.Builder builder;
+							if (keep) {
+								builder = ContentProviderOperation.newUpdate(RawContacts.CONTENT_URI);
+								builder.withValue(RawContacts.ACCOUNT_NAME, null);
+								builder.withValue(RawContacts.ACCOUNT_TYPE, null);
+							} else
+								builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
+
 	    					builder.withSelection(RawContacts._ID + "=?", new String[]{String.valueOf(c1.getLong(0))});
 	    					operationList.add(builder.build());
 	    				}
@@ -124,7 +138,14 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			}
 			
 			while (c1.moveToNext()) {
-				ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
+				ContentProviderOperation.Builder builder;
+				if (keep) {
+					builder = ContentProviderOperation.newUpdate(RawContacts.CONTENT_URI);
+					builder.withValue(RawContacts.ACCOUNT_NAME, null);
+					builder.withValue(RawContacts.ACCOUNT_TYPE, null);
+				} else
+					builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
+
 				builder.withSelection(RawContacts._ID + "=?", new String[]{String.valueOf(c1.getLong(0))});
 				operationList.add(builder.build());
 			}

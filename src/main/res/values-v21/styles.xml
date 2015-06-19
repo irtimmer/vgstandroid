@@ -1,0 +1,4 @@
+<resources>
+    <style name="AppBaseConfigTheme" parent="android:Theme.DeviceDefault.Settings">
+    </style>
+</resources>
