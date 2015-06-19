@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013, 2014 Iwan Timmer
+ * Copyright (C) 2013-2015 Iwan Timmer
  *
  * This file is part of VGSTAndroid.
  *
@@ -19,6 +19,8 @@
 
 package nl.vgst.android.account;
 
+import nl.vgst.android.Api;
+import nl.vgst.android.AuthenticationException;
 import nl.vgst.android.Vgst;
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
@@ -28,6 +30,12 @@ import android.accounts.NetworkErrorException;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 
 /**
  * AccountAuthenticator for VGST accounts
@@ -50,7 +58,7 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
 		
 		Intent intent = new Intent(context, LoginActivity.class);
 		intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
-		
+
 		Bundle reply = new Bundle();
 		reply.putParcelable(AccountManager.KEY_INTENT, intent);
 
@@ -93,7 +101,30 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
 	public Bundle getAuthToken(AccountAuthenticatorResponse response,
 			Account account, String authTokenType, Bundle options)
 			throws NetworkErrorException {
-		return null;
+		AccountManager am = AccountManager.get(context);
+		String token = null; //am.peekAuthToken(account, authTokenType);
+
+		if (TextUtils.isEmpty(token)) {
+			Api api = new Api(account, context);
+			try {
+				JSONObject data = api.get("api/createToken");
+				token = data.getJSONObject("data").getString("token");
+			} catch (AuthenticationException e) {
+				//Nothing to do
+			} catch (IOException|JSONException e) {
+				return createErrorBundle(e);
+			}
+		}
+
+		if (!TextUtils.isEmpty(token)) {
+			final Bundle result = new Bundle();
+			result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
+			result.putString(AccountManager.KEY_ACCOUNT_TYPE, account.type);
+			result.putString(AccountManager.KEY_AUTHTOKEN, token);
+			return result;
+		}
+
+		return updateCredentials(response, account, authTokenType, options);
 	}
 
 	@Override
@@ -102,5 +133,12 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
             return Vgst.AUTHTOKEN_TYPE_FULL_ACCESS_LABEL;
         else
             return authTokenType + " (Label)";
+	}
+
+	private Bundle createErrorBundle(Exception e) {
+		final Bundle result = new Bundle();
+		result.putInt(AccountManager.KEY_ERROR_CODE, 1);
+		result.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
+		return result;
 	}
 }

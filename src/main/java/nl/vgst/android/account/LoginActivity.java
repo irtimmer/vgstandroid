@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013, 2014 Iwan Timmer
+ * Copyright (C) 2013-2015 Iwan Timmer
  *
  * This file is part of VGSTAndroid.
  *
@@ -22,7 +22,6 @@ package nl.vgst.android.account;
 import java.io.IOException;
 
 import nl.vgst.android.Api;
-import nl.vgst.android.AuthenticationException;
 import nl.vgst.android.R;
 import nl.vgst.android.Vgst;
 
@@ -57,7 +56,10 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 		if (icicle!=null) {
 			TextView tvUsername = (TextView) findViewById(R.id.username);
 			String accountName = icicle.getString(AccountManager.KEY_ACCOUNT_NAME);
-			tvUsername.setText(accountName);
+			if (accountName != null) {
+				tvUsername.setText(accountName);
+				tvUsername.setEnabled(false);
+			}
 		}
 	}
 
@@ -85,7 +87,6 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 			return;
 		
 		ProgressDialog dialog = ProgressDialog.show(this, "Login", getResources().getText(R.string.checking));
-		
 		new LoginTask(tvUsername, tvPassword, dialog).execute();
 	}
 	
@@ -112,38 +113,7 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 			Api api = new Api(username, password);
 			try {
 				JSONObject data = api.get("api/checkCredentials");
-
-				boolean succeed = data.getBoolean("data");
-				if (succeed) {
-					AccountManager accMgr = AccountManager.get(LoginActivity.this);
-					Account account = null;
-					for (Account acc:accMgr.getAccounts()) {
-						if (acc.name==username)
-							account = acc;
-					}
-					
-					if (account==null) {
-						account = new Account(username, Vgst.ACCOUNT_TYPE);
-						accMgr.addAccountExplicitly(account, password, null);
-
-						ContentResolver.setIsSyncable(account, "com.android.contacts", 1);
-						ContentResolver.setIsSyncable(account, "com.android.calendar", Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH ? 1 : 0);
-
-						Bundle params = new Bundle();
-						params.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
-						params.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
-						
-						setSync(account, params);
-						
-						ContentResolver.setSyncAutomatically(account, "com.android.contacts", true);
-						if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
-							ContentResolver.setSyncAutomatically(account, "com.android.calendar", true);
-					} else
-						accMgr.setPassword(account, password);
-					
-				}
-				
-				return succeed;
+				return data.getBoolean("data");
 			} catch (IOException e) {
 				toastRes = R.string.server_failed;
 				Log.e(TAG, "Kan data niet lezen", e);
@@ -180,9 +150,32 @@ public class LoginActivity extends AccountAuthenticatorActivity {
 				Toast.makeText(LoginActivity.this, toastRes, Toast.LENGTH_LONG).show();
 			else {
 				Toast.makeText(LoginActivity.this, "Login succesfull", Toast.LENGTH_LONG).show();
-				// Now we tell our caller, could be the Android Account Manager or even
-				// our own application
-				// that the process was successful
+
+				AccountManager accMgr = AccountManager.get(LoginActivity.this);
+				Account account = null;
+				for (Account acc:accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE)) {
+					if (acc.name==username)
+						account = acc;
+				}
+
+				if (account==null) {
+					account = new Account(username, Vgst.ACCOUNT_TYPE);
+					accMgr.addAccountExplicitly(account, password, null);
+
+					ContentResolver.setIsSyncable(account, "com.android.contacts", 1);
+					ContentResolver.setIsSyncable(account, "com.android.calendar", Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH ? 1 : 0);
+
+					Bundle params = new Bundle();
+					params.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, false);
+					params.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, false);
+
+					setSync(account, params);
+
+					ContentResolver.setSyncAutomatically(account, "com.android.contacts", true);
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
+						ContentResolver.setSyncAutomatically(account, "com.android.calendar", true);
+				} else
+					accMgr.setPassword(account, password);
 
 				Intent intent = new Intent();
 				intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, username);

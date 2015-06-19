@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013, 2014 Iwan Timmer
+ * Copyright (C) 2013-2015 Iwan Timmer
  *
  * This file is part of VGSTAndroid.
  *
@@ -19,15 +19,12 @@
 
 package nl.vgst.android;
 
-import java.io.IOException;
-
 import nl.vgst.android.account.LoginActivity;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
@@ -35,10 +32,9 @@ import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.Handler;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -83,72 +79,48 @@ public class Main extends Activity {
 			//Check if user is registered for GCM if Play Services are available
 			if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(this)==ConnectionResult.SUCCESS && GCMUtil.getRegistrationId(this)==null)
 				GCMUtil.register(this);
-			
-			new LoginTask().execute();
-		} else {
-			Intent intent = new Intent(this, LoginActivity.class);
-			startActivityForResult(intent, REQUEST_LOGIN);
-		}		
-	}
-	
-	private class LoginTask extends AsyncTask<Void, Void, String> {
 
-		private final static String LOGIN = "LOGIN";
-
-		@Override
-		protected String doInBackground(Void... args) {
+			AccountManager accounts = AccountManager.get(Main.this);
+			Account account = accounts.getAccountsByType(Vgst.ACCOUNT_TYPE)[0];
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-				AccountManager accounts = AccountManager.get(Main.this);
-				Account account = accounts.getAccountsByType(Vgst.ACCOUNT_TYPE)[0];
 				ContentResolver.setIsSyncable(account, "com.android.calendar", 1);
 				ContentResolver.setSyncAutomatically(account, "com.android.calendar", true);
 			}
-
-			Api api = new Api(Main.this);
-			try {
-				JSONObject data = api.get("api/createToken").getJSONObject("data");
-				int userId = data.getInt("userId");
-				String token = data.getString("token");
-				
-				return Api.HOST + "login/token/id/" + userId + "/token/" + token;
-			} catch (AuthenticationException e) {
-				return LOGIN;
-			} catch (JSONException e) {
-				Log.e(TAG, "Kan data niet lezen", e);
-			} catch (IOException e) {
-				Log.e(TAG, "Kan data niet lezen", e);
-			}
-			
-			return null;
-		}
-		
-		@Override
-		protected void onPostExecute(String result) {
-			if (result==LOGIN) {
-				Intent intent = new Intent(Main.this, LoginActivity.class);
-				startActivityForResult(intent, 0);
-			} else if (result!=null) {
-				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(result));
-				startActivity(intent);
-				finish();
-			} else {
-				AlertDialog dialog = new AlertDialog.Builder(Main.this).create();
-				dialog.setTitle(R.string.warning_title);
-				dialog.setMessage(getString(R.string.server_failed));
-				dialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-					public void onClick(DialogInterface dialog, int which) {
-						finish();
+			accounts.getAuthToken(account, Vgst.AUTHTOKEN_TYPE_FULL_ACCESS, (Bundle) null, this, new AccountManagerCallback<Bundle>() {
+				@Override
+				public void run(AccountManagerFuture<Bundle> future) {
+					Bundle result = null;
+					try {
+						result = future.getResult();
+					} catch (Exception e) {
+						e.printStackTrace();
+						return;
 					}
-				});
-				dialog.show();
-			}
-		}
-		
-		@Override
-		protected void onCancelled() {
-			finish();
-		}
 
+					if (result.getInt(AccountManager.KEY_ERROR_CODE, 0) == 0) {
+						String token = result.getString(AccountManager.KEY_AUTHTOKEN);
+						String username = result.getString(AccountManager.KEY_ACCOUNT_NAME);
+						String url = Api.HOST + "login/token/username/" + username + "/token/" + token;
+						Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+						startActivity(intent);
+						finish();
+					} else {
+						AlertDialog dialog = new AlertDialog.Builder(Main.this).create();
+						dialog.setTitle(R.string.warning_title);
+						dialog.setMessage(getString(R.string.server_failed));
+						dialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								finish();
+							}
+						});
+						dialog.show();
+					}
+				}
+			}, (Handler) null);
+		} else {
+			Intent intent = new Intent(this, LoginActivity.class);
+			startActivityForResult(intent, REQUEST_LOGIN);
+		}
 	}
 
 }
