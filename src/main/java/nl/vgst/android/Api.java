@@ -66,8 +66,9 @@ public class Api {
 	private void init(Account account, AccountManager accounts) throws AuthenticatorException, OperationCanceledException, IOException {
 		this.accounts = accounts;
 		token = accounts.blockingGetAuthToken(account, Vgst.AUTHTOKEN_TYPE_FULL_ACCESS, true);
-		if (token == null)
-			token = "";
+		if (token == null) {
+			throw new AuthenticatorException("Can't get authentication token");
+		}
 	}
 
 	public JSONObject get(String url) throws IOException, JSONException {
