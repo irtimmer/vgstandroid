@@ -16,6 +16,7 @@
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
     <permission android:name="nl.vgst.android.permission.C2D_MESSAGE" android:protectionLevel="signature" />
 	<uses-permission android:name="nl.vgst.android.permission.C2D_MESSAGE" />
@@ -93,6 +94,18 @@
                 android:resource="@xml/sync_calendar" />
         </service>
 
+        <service
+            android:name=".sync.WifiSyncAdapterService"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/sync_wifi" />
+        </service>
+
 		<receiver
             android:name=".GCMBroadcastReceiver"
             android:permission="com.google.android.c2dm.permission.SEND" >
@@ -101,6 +114,11 @@
                 <category android:name="nl.vgst.android" />
             </intent-filter>
         </receiver>
+
+        <provider android:name=".sync.DummyProvider"
+            android:authorities="nl.vgst.wifi"
+            android:syncable="true"
+            android:label="WiFi" />
 
         <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version" />
     </application>
