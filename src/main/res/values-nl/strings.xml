@@ -19,4 +19,8 @@
 
 	<string name="keep_users">Behoud oud-leden</string>
 	<string name="keep_users_summary">Behoud oud-leden contacten</string>
+
+	<string name="settings_title">Instellingen</string>
+	<string name="action_notifications">Notificaties</string>
+	<string name="action_search">Zoeken</string>
 </resources>
