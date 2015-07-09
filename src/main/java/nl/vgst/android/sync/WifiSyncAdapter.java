@@ -71,8 +71,8 @@ public class WifiSyncAdapter extends AbstractThreadedSyncAdapter {
 
                 if (nid == 0) {
                     WifiConfiguration config = new WifiConfiguration();
-                    config.SSID = network.getString("ssid");
-                    config.preSharedKey = network.getString("password");
+                    config.SSID = '"' + network.getString("ssid") + '"';
+                    config.preSharedKey = '"' + network.getString("password") + '"';
                     Log.v(TAG, "Add network " + network.getInt("id") + " " + config.SSID);
                     int id = manager.addNetwork(config);
                     manager.enableNetwork(id, false);
@@ -80,8 +80,8 @@ public class WifiSyncAdapter extends AbstractThreadedSyncAdapter {
                 } else {
                     WifiConfiguration config = new WifiConfiguration();
                     config.networkId = nid;
-                    config.SSID = network.getString("ssid");
-                    config.preSharedKey = network.getString("password");
+                    config.SSID = '"' + network.getString("ssid") + '"';
+                    config.preSharedKey = '"' + network.getString("password") + '"';
                     Log.v(TAG, "Update network " + network.getInt("id") + " " + config.SSID);
                     manager.updateNetwork(config);
                 }
