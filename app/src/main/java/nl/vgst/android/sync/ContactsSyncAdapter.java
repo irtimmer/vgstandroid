@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import nl.vgst.android.Api;
-import nl.vgst.android.GCMUtil;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,15 +45,10 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.Settings;
 import android.util.Log;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-
 
 public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	
@@ -68,9 +62,6 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 
 	@Override
 	public void onPerformSync(final Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
-        if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(getContext())== ConnectionResult.SUCCESS)
-            GCMUtil.getRegistrationId(getContext());
-
 		ConnectivityManager connMgr = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 		activeInfo = connMgr.getActiveNetworkInfo();
 

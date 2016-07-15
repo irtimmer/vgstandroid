@@ -35,10 +35,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.widget.Toast;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 
 /**
  * Main activity to show login screen or redirect user to website
@@ -54,11 +50,6 @@ public class Main extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_splash);
-		
-		if (GCMUtil.checkPlayServices(this, createPendingResult(REQUEST_GCM, new Intent(), PendingIntent.FLAG_ONE_SHOT))) {
-			AccountManager accMgr = AccountManager.get(this);
-			nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
-		}
 	}
 	
 	@Override
@@ -76,10 +67,6 @@ public class Main extends Activity {
 	
 	private void nextActivity(boolean authenticated) {
 		if (authenticated) {
-			//Check if user is registered for GCM if Play Services are available
-			if (GooglePlayServicesUtil.isGooglePlayServicesAvailable(this)==ConnectionResult.SUCCESS && GCMUtil.getRegistrationId(this)==null)
-				GCMUtil.register(this);
-
 			AccountManager accounts = AccountManager.get(Main.this);
 			Account account = accounts.getAccountsByType(Vgst.ACCOUNT_TYPE)[0];
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
