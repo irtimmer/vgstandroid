@@ -50,6 +50,9 @@ public class Main extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_splash);
+
+		AccountManager accMgr = AccountManager.get(this);
+		nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
 	}
 	
 	@Override
