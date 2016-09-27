@@ -19,16 +19,6 @@
  
 package nl.vgst.android.sync;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import nl.vgst.android.Api;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.accounts.Account;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
@@ -49,6 +39,21 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.RawContacts;
 import android.provider.ContactsContract.Settings;
 import android.util.Log;
+import android.util.Pair;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import nl.vgst.android.Api;
 
 public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	
@@ -88,49 +93,37 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			//ContentResolver contentResolver = getContext().getContentResolver();
 		    Uri rawContactUri = RawContacts.CONTENT_URI.buildUpon().appendQueryParameter(RawContacts.ACCOUNT_NAME, account.name).appendQueryParameter(RawContacts.ACCOUNT_TYPE, account.type).build();
 			Cursor c1 = provider.query(rawContactUri, new String[] { RawContacts._ID, RawContacts.SYNC1, RawContacts.SYNC2 }, null, null, RawContacts.SYNC1);
-			
+
+			Set<Long> removeIds = new HashSet<>();
+			Map<Long, Pair<Long, Integer>> syncIds = new HashMap<>();
+			while (c1.moveToNext()) {
+				removeIds.add(c1.getLong(0));
+				int oldPhotoId = -1;
+				try {
+					oldPhotoId = Integer.parseInt(c1.getString(2));
+				} catch (NumberFormatException e) {}
+				syncIds.put(Long.parseLong(c1.getString(1)), new Pair<Long, Integer>(c1.getLong(0), oldPhotoId));
+			}
+
 			JSONArray members = data.getJSONArray("data");
 			for (int i=0;i<members.length();i++) {
 				JSONObject member = members.getJSONObject(i);
 				long id = member.getLong("id");
-				
-				boolean processed = false;
-				
-				while (!processed) {
-					if (c1.moveToNext()) {
-	    				long id2 = Long.parseLong(c1.getString(1));
-	    				
-	    				if (id==id2) {
-	    					int oldPhotoId = -1;
-	    					try {
-	    						oldPhotoId = Integer.parseInt(c1.getString(2));
-	    					} catch (NumberFormatException e) {}
-	    					updateContact(api, account, provider, c1.getLong(0), member, oldPhotoId);
-	    					processed = true;
-	    				} else if (id<id2) {
-	    					addContact(api, account, provider, member);
-	    					c1.moveToPrevious();
-	    					processed = true;
-	    				} else {
-							ContentProviderOperation.Builder builder;
-							if (keep) {
-								builder = ContentProviderOperation.newUpdate(RawContacts.CONTENT_URI);
-								builder.withValue(RawContacts.ACCOUNT_NAME, null);
-								builder.withValue(RawContacts.ACCOUNT_TYPE, null);
-							} else
-								builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
 
-	    					builder.withSelection(RawContacts._ID + "=?", new String[]{String.valueOf(c1.getLong(0))});
-	    					operationList.add(builder.build());
-	    				}
-	    			} else {
-	    				addContact(api, account, provider, member);
-	    				processed = true;
-	    			}
+				if (syncIds.containsKey(id)) {
+					Log.d(TAG, "Update contact " + id);
+					Pair<Long, Integer> ids = syncIds.get(id);
+					updateContact(api, account, provider, ids.first, member, ids.second);
+					removeIds.remove(ids.first);
+				} else {
+					Log.d(TAG, "Create contact " + id);
+					addContact(api, account, provider, member);
 				}
+
 			}
 			
-			while (c1.moveToNext()) {
+			for (long id:removeIds) {
+				Log.d(TAG, "Delete contact " + id);
 				ContentProviderOperation.Builder builder;
 				if (keep) {
 					builder = ContentProviderOperation.newUpdate(RawContacts.CONTENT_URI);
@@ -139,7 +132,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 				} else
 					builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
 
-				builder.withSelection(RawContacts._ID + "=?", new String[]{String.valueOf(c1.getLong(0))});
+				builder.withSelection(RawContacts._ID + "=?", new String[]{String.valueOf(id)});
 				operationList.add(builder.build());
 			}
 		    
@@ -223,7 +216,6 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	
 	private void setBuilders(Api api, List<ContentProviderOperation> operationList, long id, JSONObject member, ContentProviderOperation.Builder raw, ContentProviderOperation.Builder name, ContentProviderOperation.Builder email, ContentProviderOperation.Builder telephone, ContentProviderOperation.Builder photo) throws IOException, JSONException {
 		boolean addPhoto = false;
-		Log.i(TAG, "Connect " + activeInfo.getType());
         if (photo!=null && activeInfo != null && activeInfo.getType() == ConnectivityManager.TYPE_WIFI && activeInfo.isConnected()) {
     		if (id==0)
     			photo.withValueBackReference(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID, 0);

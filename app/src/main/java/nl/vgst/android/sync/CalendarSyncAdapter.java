@@ -45,6 +45,10 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import nl.vgst.android.Api;
@@ -85,44 +89,34 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 			Uri rawContactUri = Events.CONTENT_URI.buildUpon().appendQueryParameter(Events.ACCOUNT_NAME, account.name).appendQueryParameter(Events.ACCOUNT_TYPE, account.type).build();
 			Cursor c1 = provider.query(rawContactUri, new String[] { Events._ID, Events._SYNC_ID }, null, null, Events._SYNC_ID);
 
+			Set<Long> removeIds = new HashSet<>();
+			Map<Long, Long> syncIds = new HashMap<>();
+			while (c1.moveToNext()) {
+				removeIds.add(c1.getLong(0));
+				syncIds.put(Long.parseLong(c1.getString(1)), c1.getLong(0));
+			}
+
 			JSONArray events = data.getJSONArray("data");
 			for (int i=0;i<events.length();i++) {
 				JSONObject event = events.getJSONObject(i);
 				long id = event.getLong("id");
 
-				boolean processed = false;
-
-				while (!processed) {
-					if (c1.moveToNext()) {
-						long id2 = Long.parseLong(c1.getString(1));
-
-						if (id==id2) {
-							Log.d(TAG, "Update event " + id);
-							updateEvent(api, calendarId, account, provider, c1.getLong(0), event);
-							processed = true;
-							syncResult.stats.numUpdates++;
-						} else if (id<id2) {
-							Log.d(TAG, "Create event " + id);
-							addEvent(api, calendarId, account, provider, event);
-							processed = true;
-							syncResult.stats.numInserts++;
-						} else {
-							ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(Events.CONTENT_URI);
-							builder.withSelection(Events._ID + "=?", new String[]{String.valueOf(c1.getLong(0))});
-							operationList.add(builder.build());
-							syncResult.stats.numDeletes++;
-						}
-					} else {
-						addEvent(api, calendarId, account, provider, event);
-						processed = true;
-						syncResult.stats.numInserts++;
-					}
+				if (syncIds.containsKey(id)) {
+					Log.d(TAG, "Update event " + id);
+					updateEvent(api, calendarId, account, provider, id, event);
+					syncResult.stats.numUpdates++;
+					removeIds.remove(syncIds.get(id));
+				} else {
+					Log.d(TAG, "Create event " + id);
+					addEvent(api, calendarId, account, provider, event);
+					syncResult.stats.numInserts++;
 				}
 			}
 
-			while (c1.moveToNext()) {
+			for (long id:removeIds) {
+				Log.d(TAG, "Delete event " + id);
 				ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(Events.CONTENT_URI);
-				builder.withSelection(Events._ID + "=?", new String[]{String.valueOf(c1.getLong(0))});
+				builder.withSelection(Events._ID + "=?", new String[]{String.valueOf(id)});
 				operationList.add(builder.build());
 				syncResult.stats.numDeletes++;
 			}
