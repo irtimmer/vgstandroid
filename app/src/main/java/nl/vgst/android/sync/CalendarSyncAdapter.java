@@ -57,6 +57,7 @@ import nl.vgst.android.Api;
 public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 
 	private static final String TAG = "CalendarSyncAdapter";
+	private static final int MAX_OPERATIONS = 100;
 
 	public CalendarSyncAdapter(Context context) {
 		super(context, true);
@@ -87,7 +88,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 			JSONObject data = api.get("activities/api/getEvents");
 
 			Uri rawContactUri = Events.CONTENT_URI.buildUpon().appendQueryParameter(Events.ACCOUNT_NAME, account.name).appendQueryParameter(Events.ACCOUNT_TYPE, account.type).build();
-			Cursor c1 = provider.query(rawContactUri, new String[] { Events._ID, Events._SYNC_ID }, null, null, Events._SYNC_ID);
+			Cursor c1 = provider.query(rawContactUri, new String[] { Events._ID, Events._SYNC_ID, Events.SYNC_DATA1 }, null, null, Events._SYNC_ID);
 
 			Set<Long> removeIds = new HashSet<>();
 			Map<Long, Long> syncIds = new HashMap<>();
@@ -111,6 +112,11 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 					addEvent(api, calendarId, account, provider, event);
 					syncResult.stats.numInserts++;
 				}
+
+				if (operationList.size() > MAX_OPERATIONS) {
+					provider.applyBatch(operationList);
+					operationList.clear();
+				}
 			}
 
 			for (long id:removeIds) {
@@ -118,6 +124,10 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 				ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(Events.CONTENT_URI);
 				builder.withSelection(Events._ID + "=?", new String[]{String.valueOf(id)});
 				operationList.add(builder.build());
+				if (operationList.size() > MAX_OPERATIONS) {
+					provider.applyBatch(operationList);
+					operationList.clear();
+				}
 				syncResult.stats.numDeletes++;
 			}
 
@@ -152,8 +162,6 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		raw.withValue(Events.TITLE, event.getString("title"));
 
 		operationList.add(raw.build());
-		provider.applyBatch(operationList);
-		operationList.clear();
 	}
 
 	private void addEvent(Api api, long calendarId, Account account, ContentProviderClient provider, JSONObject event) throws JSONException, RemoteException, OperationApplicationException {
@@ -167,8 +175,6 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		raw.withValue(Events.EVENT_TIMEZONE, TimeZone.getDefault().getID());
 
 		operationList.add(raw.build());
-		provider.applyBatch(operationList);
-		operationList.clear();
 	}
 
 	private static Uri asSyncAdapter(Uri uri, String account, String accountType) {

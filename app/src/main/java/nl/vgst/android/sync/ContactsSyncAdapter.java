@@ -58,6 +58,7 @@ import nl.vgst.android.Api;
 public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	
 	private static final String TAG = "ContactsSyncAdapter";
+	private static final int MAX_OPERATIONS = 100;
 
 	private NetworkInfo activeInfo;
 
@@ -120,6 +121,10 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 					addContact(api, account, provider, member);
 				}
 
+				if (operationList.size() > MAX_OPERATIONS) {
+					provider.applyBatch(operationList);
+					operationList.clear();
+				}
 			}
 			
 			for (long id:removeIds) {
@@ -134,6 +139,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 
 				builder.withSelection(RawContacts._ID + "=?", new String[]{String.valueOf(id)});
 				operationList.add(builder.build());
+
+				if (operationList.size() > MAX_OPERATIONS) {
+					provider.applyBatch(operationList);
+					operationList.clear();
+				}
 			}
 		    
 		    provider.applyBatch(operationList);
@@ -190,9 +200,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		}
 		
 		setBuilders(api, operationList, id, member, raw, name, email, telephone, photo);
-		
-		provider.applyBatch(operationList);
-		operationList.clear();
+
+		if (photo != null) {
+			provider.applyBatch(operationList);
+			operationList.clear();
+		}
 	}
 
 	private void addContact(Api api, Account account, ContentProviderClient provider, JSONObject member) throws IOException, RemoteException, OperationApplicationException, JSONException {
@@ -210,8 +222,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			photo = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
 		
 		setBuilders(api, operationList, 0, member, raw, name, email, telephone, photo);
-		provider.applyBatch(operationList);
-		operationList.clear();
+
+		if (photo != null) {
+			provider.applyBatch(operationList);
+			operationList.clear();
+		}
 	}
 	
 	private void setBuilders(Api api, List<ContentProviderOperation> operationList, long id, JSONObject member, ContentProviderOperation.Builder raw, ContentProviderOperation.Builder name, ContentProviderOperation.Builder email, ContentProviderOperation.Builder telephone, ContentProviderOperation.Builder photo) throws IOException, JSONException {
