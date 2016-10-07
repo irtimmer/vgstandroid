@@ -21,6 +21,7 @@ package nl.vgst.android;
 
 import nl.vgst.android.account.LoginActivity;
 
+import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
@@ -31,10 +32,12 @@ import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
 
 /**
  * Main activity to show login screen or redirect user to website
@@ -42,7 +45,7 @@ import android.os.Handler;
  */
 public class Main extends Activity {
 
-	private static final int REQUEST_GCM = 0, REQUEST_LOGIN = 1;
+	private static final int REQUEST_PERMISSION = 0, REQUEST_LOGIN = 1;
 	
 	private static final String TAG = "MAIN";
 	
@@ -54,7 +57,13 @@ public class Main extends Activity {
 		AccountManager accMgr = AccountManager.get(this);
 		nextActivity(accMgr.getAccountsByType(Vgst.ACCOUNT_TYPE).length>0);
 	}
-	
+
+	protected void checkPermission(String permission) {
+		if (ActivityCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+			ActivityCompat.requestPermissions(this, new String[]{permission}, REQUEST_PERMISSION);
+		}
+	}
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == REQUEST_LOGIN) {
@@ -69,6 +78,9 @@ public class Main extends Activity {
 	}
 	
 	private void nextActivity(boolean authenticated) {
+		checkPermission(Manifest.permission.WRITE_CALENDAR);
+		checkPermission(Manifest.permission.WRITE_CONTACTS);
+
 		if (authenticated) {
 			AccountManager accounts = AccountManager.get(Main.this);
 			Account account = accounts.getAccountsByType(Vgst.ACCOUNT_TYPE)[0];
