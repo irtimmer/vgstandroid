@@ -105,12 +105,12 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 
 				if (syncIds.containsKey(id)) {
 					Log.d(TAG, "Update event " + id);
-					updateEvent(api, calendarId, account, provider, id, event);
+					updateEvent(operationList, calendarId, account, id, event);
 					syncResult.stats.numUpdates++;
 					removeIds.remove(syncIds.get(id));
 				} else {
 					Log.d(TAG, "Create event " + id);
-					addEvent(api, calendarId, account, provider, event);
+					addEvent(operationList, calendarId, account, event);
 					syncResult.stats.numInserts++;
 				}
 
@@ -154,8 +154,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		}
 	}
 
-	private void updateEvent(Api api, long calendarId, Account account, ContentProviderClient provider, long id, JSONObject event) throws JSONException, RemoteException, OperationApplicationException {
-		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
+	private void updateEvent(ArrayList<ContentProviderOperation> operationList, long calendarId, Account account, long id, JSONObject event) throws JSONException, RemoteException, OperationApplicationException {
 		ContentProviderOperation.Builder raw = ContentProviderOperation.newUpdate(asSyncAdapter(Events.CONTENT_URI, account.name, account.type));
 		raw.withSelection(Events._SYNC_ID + "=? AND " + Events.CALENDAR_ID + "=?", new String[]{String.format("%09d", id), String.format("%09d", calendarId)});
 		raw.withValue(Events.DTSTART, String.format("%09d", event.getLong("start")*1000));
@@ -165,8 +164,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 		operationList.add(raw.build());
 	}
 
-	private void addEvent(Api api, long calendarId, Account account, ContentProviderClient provider, JSONObject event) throws JSONException, RemoteException, OperationApplicationException {
-		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
+	private void addEvent(ArrayList<ContentProviderOperation> operationList, long calendarId, Account account, JSONObject event) throws JSONException, RemoteException, OperationApplicationException {
 		ContentProviderOperation.Builder raw = ContentProviderOperation.newInsert(asSyncAdapter(Events.CONTENT_URI, account.name, account.type));
 		raw.withValue(Events.CALENDAR_ID, calendarId);
 		raw.withValue(Events._SYNC_ID, String.format("%09d", event.getLong("id")));
