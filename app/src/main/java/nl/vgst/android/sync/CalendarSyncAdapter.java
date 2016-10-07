@@ -29,6 +29,7 @@ import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.OperationApplicationException;
+import android.content.SharedPreferences;
 import android.content.SyncResult;
 import android.database.Cursor;
 import android.net.Uri;
@@ -60,6 +61,9 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 	private static final String TAG = "CalendarSyncAdapter";
 	private static final int MAX_OPERATIONS = 100;
 
+	//Clean all events on new version
+	private static final int SYNC_VERSION = 1;
+
 	public CalendarSyncAdapter(Context context) {
 		super(context, true);
 	}
@@ -88,14 +92,21 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 
 			JSONObject data = api.get("activities/api/getEvents");
 
-			Uri uri = asSyncAdapter(Events.CONTENT_URI, account.name, account.type);
-			Cursor c1 = provider.query(uri, new String[] { Events._ID, Events._SYNC_ID, Events.SYNC_DATA1 }, null, null, Events._SYNC_ID);
-
 			Set<Long> removeIds = new HashSet<>();
 			Map<Long, Long> syncIds = new HashMap<>();
-			while (c1.moveToNext()) {
-				removeIds.add(c1.getLong(0));
-				syncIds.put(Long.parseLong(c1.getString(1)), c1.getLong(0));
+
+			Uri uri = asSyncAdapter(Events.CONTENT_URI, account.name, account.type);
+			SharedPreferences prefs = getContext().getSharedPreferences("nl.vgst.android", Context.MODE_PRIVATE);
+			if (prefs.getInt("calendar_version", 0) < SYNC_VERSION) {
+				Log.d(TAG, "Old calendar version cleanup");
+				operationList.add(ContentProviderOperation.newDelete(uri).withSelection(Events._SYNC_ID + " >= 0", new String[]{}).build());
+				prefs.edit().putInt("calendar_version", SYNC_VERSION).commit();
+			} else {
+				Cursor c1 = provider.query(uri, new String[] { Events._ID, Events._SYNC_ID, Events.SYNC_DATA1 }, null, null, Events._SYNC_ID);
+				while (c1.moveToNext()) {
+					removeIds.add(c1.getLong(0));
+					syncIds.put(Long.parseLong(c1.getString(1)), c1.getLong(0));
+				}
 			}
 
 			JSONArray events = data.getJSONArray("data");
