@@ -35,6 +35,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
+import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
 import android.util.Log;
@@ -87,8 +88,8 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 
 			JSONObject data = api.get("activities/api/getEvents");
 
-			Uri rawContactUri = Events.CONTENT_URI.buildUpon().appendQueryParameter(Events.ACCOUNT_NAME, account.name).appendQueryParameter(Events.ACCOUNT_TYPE, account.type).build();
-			Cursor c1 = provider.query(rawContactUri, new String[] { Events._ID, Events._SYNC_ID, Events.SYNC_DATA1 }, null, null, Events._SYNC_ID);
+			Uri uri = asSyncAdapter(Events.CONTENT_URI, account.name, account.type);
+			Cursor c1 = provider.query(uri, new String[] { Events._ID, Events._SYNC_ID, Events.SYNC_DATA1 }, null, null, Events._SYNC_ID);
 
 			Set<Long> removeIds = new HashSet<>();
 			Map<Long, Long> syncIds = new HashMap<>();
@@ -121,7 +122,7 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 
 			for (long id:removeIds) {
 				Log.d(TAG, "Delete event " + id);
-				ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(Events.CONTENT_URI);
+				ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(uri);
 				builder.withSelection(Events._ID + "=?", new String[]{String.valueOf(id)});
 				operationList.add(builder.build());
 				if (operationList.size() > MAX_OPERATIONS) {
@@ -178,9 +179,9 @@ public class CalendarSyncAdapter extends AbstractThreadedSyncAdapter {
 	}
 
 	private static Uri asSyncAdapter(Uri uri, String account, String accountType) {
-		return uri.buildUpon()
-				.appendQueryParameter(android.provider.CalendarContract.CALLER_IS_SYNCADAPTER,"true")
-				.appendQueryParameter(Calendars.ACCOUNT_NAME, account)
-				.appendQueryParameter(Calendars.ACCOUNT_TYPE, accountType).build();
+		Uri.Builder builder = uri.buildUpon().appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER, "true");
+		builder.appendQueryParameter(Calendars.ACCOUNT_NAME, account);
+		builder.appendQueryParameter(Calendars.ACCOUNT_TYPE, accountType);
+		return builder.build();
 	}
 }

@@ -91,9 +91,8 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			
 			JSONObject data = api.get("users/api/getMembers");
 		    
-			//ContentResolver contentResolver = getContext().getContentResolver();
-		    Uri rawContactUri = RawContacts.CONTENT_URI.buildUpon().appendQueryParameter(RawContacts.ACCOUNT_NAME, account.name).appendQueryParameter(RawContacts.ACCOUNT_TYPE, account.type).build();
-			Cursor c1 = provider.query(rawContactUri, new String[] { RawContacts._ID, RawContacts.SYNC1, RawContacts.SYNC2 }, null, null, RawContacts.SYNC1);
+		    Uri uri = asSyncAdapter(RawContacts.CONTENT_URI, account.name, account.type);
+			Cursor c1 = provider.query(uri, new String[] { RawContacts._ID, RawContacts.SYNC1, RawContacts.SYNC2 }, null, null, RawContacts.SYNC1);
 
 			Set<Long> removeIds = new HashSet<>();
 			Map<Long, Pair<Long, Integer>> syncIds = new HashMap<>();
@@ -131,11 +130,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 				Log.d(TAG, "Delete contact " + id);
 				ContentProviderOperation.Builder builder;
 				if (keep) {
-					builder = ContentProviderOperation.newUpdate(RawContacts.CONTENT_URI);
+					builder = ContentProviderOperation.newUpdate(uri);
 					builder.withValue(RawContacts.ACCOUNT_NAME, null);
 					builder.withValue(RawContacts.ACCOUNT_TYPE, null);
 				} else
-					builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
+					builder = ContentProviderOperation.newDelete(uri);
 
 				builder.withSelection(RawContacts._ID + "=?", new String[]{String.valueOf(id)});
 				operationList.add(builder.build());
@@ -152,35 +151,31 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			syncResult.stats.numIoExceptions++;
 		} catch (RemoteException e) {
 			Log.e(TAG, "Probleem met data", e);
-			syncResult.databaseError = true;
 		} catch (OperationApplicationException e) {
 			Log.e(TAG, "Synchronisatie data incorrect", e);
-			syncResult.databaseError = true;
 		} catch (JSONException e) {
 			Log.e(TAG, "Probleem met data", e);
 			syncResult.stats.numParseExceptions++;
 		} catch (AuthenticatorException e) {
 			Log.e(TAG, "Probleem met authenticatie", e);
-			syncResult.databaseError = true;
 		} catch (OperationCanceledException e) {
 			Log.e(TAG, "Probleem met authenticatie", e);
-			syncResult.databaseError = true;
 		}
 	}
 	
 	private void updateContact(Api api, Account account, ContentProviderClient provider, long id, JSONObject member, int oldPhotoId) throws IOException, RemoteException, OperationApplicationException, JSONException {
 		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 		
-		ContentProviderOperation.Builder raw = ContentProviderOperation.newUpdate(ContactsContract.RawContacts.CONTENT_URI);
+		ContentProviderOperation.Builder raw = ContentProviderOperation.newUpdate(asSyncAdapter(ContactsContract.RawContacts.CONTENT_URI, account.name, account.type));
 		raw.withSelection(ContactsContract.RawContacts.SYNC1 + "=?", new String[]{String.format("%09d", member.getLong("id"))});
 		
-		ContentProviderOperation.Builder email = ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI);
+		ContentProviderOperation.Builder email = ContentProviderOperation.newUpdate(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
 		email.withSelection(ContactsContract.CommonDataKinds.Email.RAW_CONTACT_ID + "=?" + " AND " + ContactsContract.Data.MIMETYPE + "=?", new String[]{String.valueOf(id), ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE});
 		
-		ContentProviderOperation.Builder name = ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI);
+		ContentProviderOperation.Builder name = ContentProviderOperation.newUpdate(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
 		name.withSelection(ContactsContract.CommonDataKinds.StructuredName.RAW_CONTACT_ID + "=?" + " AND " + ContactsContract.Data.MIMETYPE + "=?", new String[]{String.valueOf(id), ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE});
 		
-		ContentProviderOperation.Builder telephone = ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI);
+		ContentProviderOperation.Builder telephone = ContentProviderOperation.newUpdate(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
 		telephone.withSelection(ContactsContract.CommonDataKinds.Phone.RAW_CONTACT_ID + "=?" + " AND " + ContactsContract.Data.MIMETYPE + "=?", new String[]{String.valueOf(id), ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE});
 		
 		ContentProviderOperation.Builder photo = null;
@@ -188,12 +183,12 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		
 		if (photoId!=oldPhotoId) {
 			if (oldPhotoId>0) {
-				photo = ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI);
+				photo = ContentProviderOperation.newUpdate(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
 				photo.withSelection(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID + "=?" + " AND " + ContactsContract.Data.MIMETYPE + "=?", new String[]{String.valueOf(id), ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE});
 			} else if (photoId>0){
-				photo = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);				
+				photo = ContentProviderOperation.newInsert(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
 			} else {
-				ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(RawContacts.CONTENT_URI);
+				ContentProviderOperation.Builder builder = ContentProviderOperation.newDelete(asSyncAdapter(RawContacts.CONTENT_URI, null, null));
 				builder.withSelection(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID + "=?" + " AND " + ContactsContract.Data.MIMETYPE + "=?", new String[]{String.valueOf(id), ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE});
 				operationList.add(builder.build());
 			}
@@ -209,14 +204,12 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 
 	private void addContact(Api api, Account account, ContentProviderClient provider, JSONObject member) throws IOException, RemoteException, OperationApplicationException, JSONException {
 		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
-		ContentProviderOperation.Builder raw = ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI);
-		raw.withValue(RawContacts.ACCOUNT_NAME, account.name);
-		raw.withValue(RawContacts.ACCOUNT_TYPE, account.type);
+		ContentProviderOperation.Builder raw = ContentProviderOperation.newInsert(asSyncAdapter(ContactsContract.RawContacts.CONTENT_URI, account.name, account.type));
 		raw.withValue(RawContacts.SYNC1, String.format("%09d", member.getLong("id")));
 
-		ContentProviderOperation.Builder email = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
-		ContentProviderOperation.Builder name = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
-		ContentProviderOperation.Builder telephone = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
+		ContentProviderOperation.Builder email = ContentProviderOperation.newInsert(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
+		ContentProviderOperation.Builder name = ContentProviderOperation.newInsert(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
+		ContentProviderOperation.Builder telephone = ContentProviderOperation.newInsert(asSyncAdapter(ContactsContract.Data.CONTENT_URI, null, null));
 		ContentProviderOperation.Builder photo = null;
 		if (member.getInt("photoId")>0)
 			photo = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
@@ -286,6 +279,15 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		email.withValue(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME);
         operationList.add(email.build());
 
+	}
+
+	private static Uri asSyncAdapter(Uri uri, String account, String accountType) {
+		Uri.Builder builder = uri.buildUpon().appendQueryParameter(ContactsContract.CALLER_IS_SYNCADAPTER, "true");
+		if (account != null && accountType != null) {
+			builder.appendQueryParameter(RawContacts.ACCOUNT_NAME, account);
+			builder.appendQueryParameter(RawContacts.ACCOUNT_TYPE, accountType);
+		}
+		return builder.build();
 	}
 
 }
