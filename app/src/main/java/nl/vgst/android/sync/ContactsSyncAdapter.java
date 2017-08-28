@@ -81,17 +81,17 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 
 			Cursor gcursor = provider.query(Settings.CONTENT_URI, new String[] {}, Settings.ACCOUNT_TYPE + "=?", new String[] {account.type}, null);
-		    if (!gcursor.moveToNext()) {
-		    	ContentProviderOperation.Builder settings = ContentProviderOperation.newInsert(Settings.CONTENT_URI);
-		    	settings.withValue(Settings.ACCOUNT_NAME, account.name);
-		    	settings.withValue(Settings.ACCOUNT_TYPE, account.type);
-		    	settings.withValue(Settings.UNGROUPED_VISIBLE, true);
-		        operationList.add(settings.build());
-		    }
+			if (!gcursor.moveToNext()) {
+				ContentProviderOperation.Builder settings = ContentProviderOperation.newInsert(Settings.CONTENT_URI);
+				settings.withValue(Settings.ACCOUNT_NAME, account.name);
+				settings.withValue(Settings.ACCOUNT_TYPE, account.type);
+				settings.withValue(Settings.UNGROUPED_VISIBLE, true);
+				operationList.add(settings.build());
+			}
 			
 			JSONObject data = api.get("users/api/getMembers");
-		    
-		    Uri uri = asSyncAdapter(RawContacts.CONTENT_URI, account.name, account.type);
+			
+			Uri uri = asSyncAdapter(RawContacts.CONTENT_URI, account.name, account.type);
 			Cursor c1 = provider.query(uri, new String[] { RawContacts._ID, RawContacts.SYNC1, RawContacts.SYNC2 }, null, null, RawContacts.SYNC1);
 
 			Set<Long> removeIds = new HashSet<>();
@@ -144,8 +144,8 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 					operationList.clear();
 				}
 			}
-		    
-		    provider.applyBatch(operationList);
+			
+			provider.applyBatch(operationList);
 		} catch (IOException e) {
 			Log.e(TAG, "Kan data niet lezen", e);
 			syncResult.stats.numIoExceptions++;
@@ -221,12 +221,12 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 	
 	private void setBuilders(Api api, List<ContentProviderOperation> operationList, long id, JSONObject member, ContentProviderOperation.Builder raw, ContentProviderOperation.Builder name, ContentProviderOperation.Builder email, ContentProviderOperation.Builder telephone, ContentProviderOperation.Builder photo) throws IOException, JSONException {
 		boolean addPhoto = false;
-        if (photo!=null && activeInfo != null && activeInfo.getType() == ConnectivityManager.TYPE_WIFI && activeInfo.isConnected()) {
-    		if (id==0)
-    			photo.withValueBackReference(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID, 0);
-    		else
-    			photo.withValue(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID, id);
-    		
+		if (photo!=null && activeInfo != null && activeInfo.getType() == ConnectivityManager.TYPE_WIFI && activeInfo.isConnected()) {
+			if (id==0)
+				photo.withValueBackReference(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID, 0);
+			else
+				photo.withValue(ContactsContract.CommonDataKinds.Photo.RAW_CONTACT_ID, id);
+			
 			photo.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
 			
 			try {
@@ -238,7 +238,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			} catch (IOException e) {
 				Log.e(TAG, "Can't download image", e);
 			}
-        }
+		}
 
 		if (id==0 || addPhoto)
 			operationList.add(raw.build());
@@ -264,8 +264,8 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		telephone.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
 		telephone.withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, member.getString("telephone"));
 		telephone.withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE);
-        operationList.add(telephone.build());
-        
+		operationList.add(telephone.build());
+
 		if (id==0)
 			email.withValueBackReference(ContactsContract.CommonDataKinds.Email.RAW_CONTACT_ID, 0);
 		else
@@ -274,7 +274,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		email.withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE);
 		email.withValue(ContactsContract.CommonDataKinds.Email.DATA, member.getString("email"));
 		email.withValue(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME);
-        operationList.add(email.build());
+		operationList.add(email.build());
 
 	}
 
