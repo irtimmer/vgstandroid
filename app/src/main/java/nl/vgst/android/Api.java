@@ -92,7 +92,7 @@ public class Api {
 		try {
 			//FIX: Gzip enconding levert problemen in combinatie met Android en HTTPS
 			urlConnection.setRequestProperty("Accept-Encoding", "identity");
-			if (urlConnection.getResponseCode()==403) {
+			if (urlConnection.getResponseCode()==403 || urlConnection.getResponseCode()==500) {
 				if (accounts != null)
 					accounts.invalidateAuthToken(Vgst.ACCOUNT_TYPE, token);
 
