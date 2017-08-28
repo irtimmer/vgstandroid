@@ -113,11 +113,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 				if (syncIds.containsKey(id)) {
 					Log.d(TAG, "Update contact " + id);
 					Pair<Long, Integer> ids = syncIds.get(id);
-					updateContact(operationList, api, account, provider, ids.first, member, ids.second);
+					updateContact(api, account, provider, ids.first, member, ids.second);
 					removeIds.remove(ids.first);
 				} else {
 					Log.d(TAG, "Create contact " + id);
-					addContact(operationList, api, account, provider, member);
+					addContact(api, account, provider, member);
 				}
 
 				if (operationList.size() > MAX_OPERATIONS) {
@@ -163,7 +163,8 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		}
 	}
 	
-	private void updateContact(ArrayList<ContentProviderOperation> operationList, Api api, Account account, ContentProviderClient provider, long id, JSONObject member, int oldPhotoId) throws IOException, RemoteException, OperationApplicationException, JSONException {
+	private void updateContact(Api api, Account account, ContentProviderClient provider, long id, JSONObject member, int oldPhotoId) throws IOException, RemoteException, OperationApplicationException, JSONException {
+		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 		ContentProviderOperation.Builder raw = ContentProviderOperation.newUpdate(asSyncAdapter(ContactsContract.RawContacts.CONTENT_URI, account.name, account.type));
 		raw.withSelection(ContactsContract.RawContacts.SYNC1 + "=?", new String[]{String.format("%09d", member.getLong("id"))});
 		
@@ -193,14 +194,11 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 		}
 		
 		setBuilders(api, operationList, id, member, raw, name, email, telephone, photo);
-
-		if (photo != null) {
-			provider.applyBatch(operationList);
-			operationList.clear();
-		}
+		provider.applyBatch(operationList);
 	}
 
-	private void addContact(ArrayList<ContentProviderOperation> operationList, Api api, Account account, ContentProviderClient provider, JSONObject member) throws IOException, RemoteException, OperationApplicationException, JSONException {
+	private void addContact(Api api, Account account, ContentProviderClient provider, JSONObject member) throws IOException, RemoteException, OperationApplicationException, JSONException {
+		ArrayList<ContentProviderOperation> operationList = new ArrayList<ContentProviderOperation>();
 		ContentProviderOperation.Builder raw = ContentProviderOperation.newInsert(asSyncAdapter(ContactsContract.RawContacts.CONTENT_URI, account.name, account.type));
 		raw.withValue(RawContacts.SYNC1, String.format("%09d", member.getLong("id")));
 
@@ -212,11 +210,7 @@ public class ContactsSyncAdapter extends AbstractThreadedSyncAdapter {
 			photo = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI);
 		
 		setBuilders(api, operationList, 0, member, raw, name, email, telephone, photo);
-
-		if (photo != null) {
-			provider.applyBatch(operationList);
-			operationList.clear();
-		}
+		provider.applyBatch(operationList);
 	}
 	
 	private void setBuilders(Api api, List<ContentProviderOperation> operationList, long id, JSONObject member, ContentProviderOperation.Builder raw, ContentProviderOperation.Builder name, ContentProviderOperation.Builder email, ContentProviderOperation.Builder telephone, ContentProviderOperation.Builder photo) throws IOException, JSONException {
